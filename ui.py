@@ -2,7 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+
+def create_info_section(title, info_text):
+    with st.expander(f"{title} - Know More?"):
+        st.info(info_text)
+
+
 # Load the CSV file with the "institute" column
+# publication_df = pd.read_csv("modified_publicationRecord_with_institute.csv")
 publication_df = pd.read_csv("modified_publicationRecord_with_institute_no_depart.csv", usecols=lambda column: column != 'creators')
 publication_df = publication_df[publication_df["date"] <= 2022.00]
 publication_df = publication_df[publication_df["date"] >= 1930.00]
@@ -14,7 +21,8 @@ st.sidebar.title("Select Institute ")
 
 # Dropdowns for selecting institute and security
 unique_institutes = publication_df["institute"].unique()
-selected_institute = st.sidebar.selectbox("Select Institute", ["All"] + sorted(list(unique_institutes)))
+selected_institute = st.sidebar.selectbox("Type or Select Institute", ["All"] + sorted(list(unique_institutes)))
+# selected_security = st.sidebar.selectbox("Select Security", ["All", "Open", "Closed"])
 
 # Display selected options
 selected_security = "All" # recently added
@@ -27,6 +35,11 @@ filtered_df = publication_df.copy()
 if selected_institute != "All":
     filtered_df = filtered_df[filtered_df["institute"] == selected_institute]
 
+# if selected_security == "Open":
+#     filtered_df = filtered_df[filtered_df["full_text_status"] == "open"]
+
+# if selected_security == "Closed":
+#     filtered_df = filtered_df[filtered_df["full_text_status"] == "closed"]
 
 total_entries = len(filtered_df)
 public_entries = len(filtered_df[filtered_df["full_text_status"] == "open"])
@@ -63,8 +76,11 @@ scatter_fig = px.scatter(
 )
 
 # Update color for each marker
+
 scatter_fig.update_traces(marker=dict(color="green"), selector=dict(name="open"))
 scatter_fig.update_traces(marker=dict(color="red"), selector=dict(name="closed"))
+
+scatter_fig.update_layout(legend_title_text=None)
 
 # Display the scatter plot
 st.plotly_chart(scatter_fig)
@@ -72,6 +88,17 @@ st.plotly_chart(scatter_fig)
 # Calculate publication count based on year and security status
 
 yearly_count_df = filtered_df.groupby(["date"]).size().reset_index(name="count")
+
+
+# bar_fig = px.scatter(
+#     yearly_count_df,
+#     x="date",
+#     y="count",
+#     title="Total Publication Count by Year",
+#     labels={"year": "Year", "count": "Publication Count"},
+# )
+
+# st.plotly_chart(bar_fig)
 
 
 st.markdown("---")
@@ -132,6 +159,4 @@ st.plotly_chart(fig)
 # Create info button and section for Open Access Ratio by Faculty
 info_text_oar_faculty = "Open Access Ratio (OAR) by Faculty shows the open access publication rate for each faculty."
 create_info_section("Open Access Ratio by Faculty", info_text_oar_faculty)
-
-
 
