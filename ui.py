@@ -3,9 +3,8 @@ import pandas as pd
 import plotly.express as px
 
 # Load the CSV file with the "institute" column
-# publication_df = pd.read_csv("modified_publicationRecord_with_institute.csv")
 publication_df = pd.read_csv("modified_publicationRecord_with_institute_no_depart.csv", usecols=lambda column: column != 'creators')
-publication_df = publication_df[publication_df["date"] <= 2024.00]
+publication_df = publication_df[publication_df["date"] <= 2022.00]
 publication_df = publication_df[publication_df["date"] >= 1930.00]
 publication_df = publication_df.sort_values(by="date")
 
@@ -15,12 +14,11 @@ st.sidebar.title("Select Institute ")
 
 # Dropdowns for selecting institute and security
 unique_institutes = publication_df["institute"].unique()
-selected_institute = st.sidebar.selectbox("Select Institute", ["All"] + list(unique_institutes))
-# selected_security = st.sidebar.selectbox("Select Security", ["All", "Open", "Closed"])
+selected_institute = st.sidebar.selectbox("Select Institute", ["All"] + sorted(list(unique_institutes)))
 
 # Display selected options
 selected_security = "All" # recently added
-st.success(f"Institute: {selected_institute} & Security: open and closed")
+st.success(f"Showing results for {selected_institute}.")
 
 # Filter the data based on selected options
 filtered_df = publication_df.copy()
@@ -29,11 +27,6 @@ filtered_df = publication_df.copy()
 if selected_institute != "All":
     filtered_df = filtered_df[filtered_df["institute"] == selected_institute]
 
-# if selected_security == "Open":
-#     filtered_df = filtered_df[filtered_df["full_text_status"] == "open"]
-
-# if selected_security == "Closed":
-#     filtered_df = filtered_df[filtered_df["full_text_status"] == "closed"]
 
 total_entries = len(filtered_df)
 public_entries = len(filtered_df[filtered_df["full_text_status"] == "open"])
@@ -81,46 +74,64 @@ st.plotly_chart(scatter_fig)
 yearly_count_df = filtered_df.groupby(["date"]).size().reset_index(name="count")
 
 
-bar_fig = px.scatter(
-    yearly_count_df,
-    x="date",
-    y="count",
-    title="Total Publication Count by Year",
-    labels={"year": "Year", "count": "Publication Count"},
+st.markdown("---")
+st.title("OAR(Open Access Rate) Data.")
+
+
+
+grouped = filtered_df.groupby(['date', 'full_text_status']).size().unstack(fill_value=0)
+grouped['total'] = grouped['closed'] + grouped['open']
+grouped['oar'] = (grouped['open'] / grouped['total']).round(4)  
+grouped = grouped.reset_index()
+grouped.columns = ['year', 'closed', 'open', 'total', 'oar']
+# st.dataframe(grouped)
+
+fig = px.scatter(
+    grouped,
+    x = "year",
+    y = "oar",
+    title = "Open Access Rate per Year",
+    labels = {"date":"Year", "oar":"Open Access Rate"},
+    hover_name='year',
+    hover_data=['closed', 'open', 'total'],
+    trendline='lowess',#ols
+    trendline_color_override='rgba(226, 85, 158, 0.41)',
+    color_discrete_sequence=['rgba(239, 61, 98, 0.72)']
 )
 
-st.plotly_chart(bar_fig)
+st.plotly_chart(fig)
+
+info_text_oar_faculty = "lorem Ips butte on the fourth level of the      second level    of the second level     of the third level of the fourth level of the fourth level of the fifth level of the sixth level of the seventh level of the eighth level of the eighth level of the "
+create_info_section("Open Access Ratio per year", info_text_oar_faculty)
+
+st.markdown("---")
+
+modified_df = pd.read_csv("modified_publicationRecord_with_institute_no_depart.csv")
+unibe_df = pd.read_csv("unibe_data.csv")
+
+merged_df = pd.merge(modified_df, unibe_df, on="institute", how="left")
+grouped = merged_df.groupby("faculty")
+faculty_projects = grouped.agg(
+    total_projects=("institute", "count"),
+    open_projects=("full_text_status", lambda x: (x == "open").sum())
+)
+faculty_projects = faculty_projects.reset_index()
+faculty_projects["oar"] = (faculty_projects["open_projects"] / faculty_projects["total_projects"]).round(2)
+faculty_projects = faculty_projects.sort_values(by="oar", ascending=False)
+
+
+fig = px.bar(
+    faculty_projects,
+    x="faculty",
+    y="oar",
+    title="Open Access Ratio by Faculty",
+    labels={"faculty": "Faculty", "oar": "Open Access Ratio"},
+    hover_data=["total_projects", "open_projects"]
+)
+st.plotly_chart(fig)
+# Create info button and section for Open Access Ratio by Faculty
+info_text_oar_faculty = "Open Access Ratio (OAR) by Faculty shows the open access publication rate for each faculty."
+create_info_section("Open Access Ratio by Faculty", info_text_oar_faculty)
 
 
 
-if selected_security == "All":
-
-    st.markdown("---")
-    st.title("OAR(Open Access Rate) Data.")
-
-
-
-    grouped = filtered_df.groupby(['date', 'full_text_status']).size().unstack(fill_value=0)
-    grouped['total'] = grouped['closed'] + grouped['open']
-    grouped['oar'] = (grouped['open'] / grouped['total']).round(4)  
-    grouped = grouped.reset_index()
-    grouped.columns = ['year', 'closed', 'open', 'total', 'oar']
-    # st.dataframe(grouped)
-
-    fig = px.scatter(
-        grouped,
-        x = "year",
-        y = "oar",
-        title = "Open Access Rate per Year",
-        labels = {"date":"Year", "oar":"Open Access Rate"},
-        hover_name='year',
-        hover_data=['closed', 'open', 'total'],
-        trendline='lowess',#ols
-        trendline_color_override='rgba(226, 85, 158, 0.41)',
-        color_discrete_sequence=['rgba(239, 61, 98, 0.72)']
-    )
-
-    st.plotly_chart(fig)
-
-else:
-    st.warning("Open Access Trends are only visible when your security is configured as 'All'.")
