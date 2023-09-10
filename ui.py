@@ -15,6 +15,7 @@ publication_df = publication_df[publication_df["date"] <= 2022.00]
 publication_df = publication_df[publication_df["date"] >= 1930.00]
 publication_df = publication_df.sort_values(by="date")
 
+
 # Streamlit Dashboard
 st.title("BORIS Dashboard")
 st.sidebar.title("Select Institute ")
@@ -57,13 +58,12 @@ col1.metric("Open Access Rate", f"{oar:.2%}")
 col2.metric("Open Entries", public_entries)
 col3.metric("Closed Entries", restricted_entries)
 col5.metric("Total Entries", total_entries)
-info_text_oar_faculty = "Open Access Ratio "
-create_info_section("Open Access Rate", info_text_oar_faculty)
 
 # Calculate publication count based on date and security status
 count_df = filtered_df.groupby(["date", "full_text_status"]).size().reset_index(name="count")
 st.markdown("---")
-st.dataframe(filtered_df)
+filtered_df_no_index = filtered_df.reset_index(drop=True)
+st.dataframe(filtered_df_no_index)
 st.markdown("---")
 
 st.title("Data Plots")
@@ -148,12 +148,13 @@ faculty_projects = faculty_projects.reset_index()
 faculty_projects["oar"] = (faculty_projects["open_projects"] / faculty_projects["total_projects"]).round(2)
 faculty_projects = faculty_projects.sort_values(by="oar", ascending=False)
 
+faculty_projects_filtered = faculty_projects[faculty_projects['oar'] > 0]
 
 fig = px.bar(
-    faculty_projects,
+    faculty_projects_filtered,
     x="faculty",
     y="oar",
-    title="Open Access Ratio by Faculty",
+    title="Open Access Ratio by Faculty (Excluding OAR = 0)",
     labels={"faculty": "Faculty", "oar": "Open Access Ratio"},
     hover_data=["total_projects", "open_projects"]
 )
