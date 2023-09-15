@@ -75,7 +75,7 @@ scatter_fig = px.scatter(
     count_df,
     x="date",
     y="count",
-    title="Scatter Plot of Publication Frequency",
+    title="Publication Frequency",
     labels={"date": "Date", "count": "count"},
     color="full_text_status"
 )
