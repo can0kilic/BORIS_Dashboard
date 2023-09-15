@@ -59,6 +59,9 @@ col2.metric("Open Entries", public_entries)
 col3.metric("Closed Entries", restricted_entries)
 col5.metric("Total Entries", total_entries)
 
+info_text_oar = "Open Access Rate (OAR): percentage of Open-Access publications among total publications -> OA-Publications / Total Publications"
+create_info_section("Open Access Rate", info_text_oar)
+
 # Calculate publication count based on date and security status
 count_df = filtered_df.groupby(["date", "full_text_status"]).size().reset_index(name="count")
 st.markdown("---")
@@ -73,7 +76,7 @@ scatter_fig = px.scatter(
     x="date",
     y="count",
     title="Scatter Plot of Publication Frequency",
-    labels={"date": "Date", "count": "Publication Count"},
+    labels={"date": "Date", "count": "count"},
     color="full_text_status"
 )
 
@@ -120,7 +123,7 @@ fig = px.scatter(
     x = "year",
     y = "oar",
     title = "Open Access Rate per Year",
-    labels = {"date":"Year", "oar":"Open Access Rate"},
+    labels = {"date":"Year", "oar":"OA-Rate"},
     hover_name='year',
     hover_data=['closed', 'open', 'total'],
     trendline='lowess',#ols
@@ -130,8 +133,7 @@ fig = px.scatter(
 
 st.plotly_chart(fig)
 
-info_text_oar_faculty = "lorem Ips butte on the fourth level of the      second level    of the second level     of the third level of the fourth level of the fourth level of the fifth level of the sixth level of the seventh level of the eighth level of the eighth level of the "
-create_info_section("Open Access Ratio per year", info_text_oar_faculty)
+
 
 st.markdown("---")
 
@@ -154,12 +156,10 @@ fig = px.bar(
     faculty_projects_filtered,
     x="faculty",
     y="oar",
-    title="Open Access Ratio by Faculty (Excluding OAR = 0)",
-    labels={"faculty": "Faculty", "oar": "Open Access Ratio"},
+    title="Open Access Rate by Faculty (Excluding OAR = 0)",
+    labels={"faculty": "Faculty", "oar": "OA-Rate"},
     hover_data=["total_projects", "open_projects"]
 )
 st.plotly_chart(fig)
 # Create info button and section for Open Access Ratio by Faculty
-info_text_oar_faculty = "Open Access Ratio (OAR) by Faculty shows the open access publication rate for each faculty."
-create_info_section("Open Access Ratio by Faculty", info_text_oar_faculty)
 
